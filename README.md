@@ -3,6 +3,10 @@ Repositorio donde se subiran las tareas de laboratorio semanales y demas trabajo
 
 INTEGRANTES: 
 Arias Chumpitaz Giovanni
+
 Arroyo Vasquez, Luis Yazid
+
 Diego Alberto Salazar García
+
 Bryan Anthony Velarde Huancahuari
+
