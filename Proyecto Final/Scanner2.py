@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 # Cargar los parámetros de calibración
 try:
@@ -9,6 +10,11 @@ try:
 except FileNotFoundError:
     print("Error: No se pudo encontrar el archivo de calibración 'calibracion_puntos.npz'.")
     exit()
+
+# Crear un directorio para guardar las imágenes
+output_dir = 'captured_images'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
 
 # Inicializa la webcam
 cap = cv2.VideoCapture(0)
@@ -21,6 +27,7 @@ images = []
 print("Escaneando... Presiona 'q' para salir.")
 plt.ion()  # Habilitar modo interactivo para matplotlib
 fig, ax = plt.subplots()
+image_count = 0
 
 while True:
     ret, frame = cap.read()
@@ -35,8 +42,13 @@ while True:
     plt.draw()
     plt.pause(0.001)  # Pausa breve para permitir la actualización de la ventana
 
-    # Almacenar la imagen
+    # Almacenar la imagen en memoria
     images.append(frame.copy())
+
+    # Guardar la imagen en el disco
+    image_path = os.path.join(output_dir, f'image_{image_count:04d}.png')
+    cv2.imwrite(image_path, frame)
+    image_count += 1
 
     # Presiona 'q' para salir
     if plt.waitforbuttonpress(0.1):  # Espera a que se presione una tecla
@@ -78,3 +90,4 @@ ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
 plt.show()
+
