@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def mostrar_imagen(titulo, imagen):
     plt.imshow(imagen, cmap='gray')
     plt.title(titulo)
-    plt.axis('off')  # Ocultar los ejes
+    plt.axis('off')  
     plt.show()
 
 # Inicializa la webcam
@@ -16,8 +16,8 @@ if not cap.isOpened():
     exit()
 
 # Configura el láser y el patrón de calibración
-laser_power = 500  # Poder del láser en mW (esto es un ejemplo, debes configurar tu láser adecuadamente)
-calibration_pattern = "calibration_pattern.jpg"  # Imagen del patrón de calibración
+laser_power = 500  
+calibration_pattern = "calibration_pattern.jpg"  
 
 # Carga el patrón de calibración
 calibration_image = cv2.imread(calibration_pattern, cv2.IMREAD_GRAYSCALE)
@@ -46,12 +46,12 @@ while True:
     contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
-        if cv2.contourArea(contour) > 100:  # Filtra los contornos pequeños
+        if cv2.contourArea(contour) > 100:  
             x, y, w, h = cv2.boundingRect(contour)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     # Mostrar la imagen procesada usando matplotlib
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convertir a RGB para matplotlib
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
     mostrar_imagen("Escaneo 3D", frame_rgb)
 
     # Presiona 'q' para salir

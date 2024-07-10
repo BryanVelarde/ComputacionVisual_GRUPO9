@@ -25,7 +25,7 @@ if not cap.isOpened():
 # Captura de imágenes
 images = []
 print("Escaneando... Presiona 'q' para salir.")
-plt.ion()  # Habilitar modo interactivo para matplotlib
+plt.ion()  
 fig, ax = plt.subplots()
 image_count = 0
 
@@ -40,7 +40,7 @@ while True:
     ax.set_title("Escaneo 3D")
     ax.axis('off')
     plt.draw()
-    plt.pause(0.001)  # Pausa breve para permitir la actualización de la ventana
+    plt.pause(0.001)  
 
     # Almacenar la imagen en memoria
     images.append(frame.copy())
@@ -51,8 +51,8 @@ while True:
     image_count += 1
 
     # Presiona 'q' para salir
-    if plt.waitforbuttonpress(0.1):  # Espera a que se presione una tecla
-        if plt.get_fignums():  # Verifica si la figura sigue abierta
+    if plt.waitforbuttonpress(0.1):  
+        if plt.get_fignums():  
             break
 
 # Libera los recursos
@@ -75,11 +75,10 @@ for img in images:
 points_3d = []
 for line in laser_lines:
     x, y = line
-    z = 0  # Suponiendo que la superficie es plana en z=0
+    z = 0  
     undistorted_point = cv2.undistortPoints(np.array([[x, y]], dtype=np.float32), mtx, dist).flatten()
     points_3d.append([undistorted_point[0], undistorted_point[1], z])
 
-# Convertir a numpy array
 points_3d = np.array(points_3d)
 
 # Mostrar los puntos 3D

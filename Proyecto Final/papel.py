@@ -4,9 +4,9 @@ import os
 import matplotlib.pyplot as plt
 
 # Configuración del patrón de puntos
-rows = 4  # Número de filas de puntos
-cols = 11  # Número de columnas de puntos
-point_spacing = 50  # Espaciado entre puntos en píxeles
+rows = 4  
+cols = 11
+point_spacing = 50  
 
 # Crear una imagen en blanco
 img_height = (rows + 1) * point_spacing
@@ -18,7 +18,7 @@ for i in range(1, rows + 1):
     for j in range(1, cols + 1):
         cv2.circle(pattern_image, 
                    (j * point_spacing, i * point_spacing), 
-                   5,  # Radio del punto
+                   5,  
                    (0, 0, 0), 
                    -1)
 
