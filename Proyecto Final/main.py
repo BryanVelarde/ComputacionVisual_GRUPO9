@@ -1,6 +1,6 @@
 import flet as ft 
 from cameraCalibrator import run_main
-from scanner import scann_main
+from scanner import run_main_scann
 
 def main(page: ft.Page):
     page.title = "Scanner 3D"
@@ -10,7 +10,7 @@ def main(page: ft.Page):
         run_main()
 
     def runScanner(e):
-        scann_main()
+        run_main_scann()
 
     buttonRunCameraCalibrator = ft.ElevatedButton(text="Calibrar Camara", on_click=runCameraCalibrator)
     buttonScann = ft.ElevatedButton(text="Comenzar a escanear", on_click=runScanner)
