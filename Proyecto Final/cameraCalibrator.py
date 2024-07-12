@@ -8,33 +8,28 @@ import numpy as np
 
 from utils import outerContour
 
-# Tamaño del patrón de rectángulo deformado temporal, proporcional al tamaño real
 warpedW = 700
 warpedH = 900
 
 
 def checkBlankArea(warped):
-    # Busca el area blanca dentro del rectangulo
+
     roi = warped[75:160, 510:635]
     mean = cv2.mean(roi)
     return mean[0]
 
-
 def removeXYSigns(warped):
-    # Usa el rectangulo blanco para 
+
     points = np.array(
         [[[97, 869], [36, 858], [27, 810], [74, 810], [94, 832]]])
     cv2.fillPoly(warped, points, (255, 255, 255))
 
 
 def findRectanglePatterns(gray):
-    # Encuentra los patrones de los posibles rectangulos, en una imagen gris 
 
-    # Umbral de la imagen usando el algoritmo Otsu
     thresh = cv2.threshold(
         gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
-    # Encuentra todos los contornos posibles en una imagen con umbral
     contours, hierarchy = cv2.findContours(
         thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
@@ -47,33 +42,22 @@ def findRectanglePatterns(gray):
             if len(curve) == 4 and cv2.isContourConvex(curve):
                 polys.append(curve)
 
-    # Ordenamos los rectangulos encontramos
-    # Se calcula la media del borde dentro del rectangulo, debe estar completanmente negro
-    # Toma la primera entrada como patron valida
     polys.sort(key=lambda x: outerContour(x, thresh), reverse=False)
     return polys
 
 
 def findRectanglePatternHomography(gray):
-    # Dada una imagen gris, encuentra el patron del rectangulo y estima la matriz de homografia
 
-    # We use findRectanglePatterns and we keep the first (best) result
     polys = findRectanglePatterns(gray)
     biggerContour = polys[0]
 
-    # We try estimating the homography and warping
     destPoints: np.ndarray = np.array(
         [[[0, warpedH]], [[0, 0]], [[warpedW, 0]], [[warpedW, warpedH]]])
     M = cv2.findHomography(biggerContour, destPoints)[0]
     warped = cv2.warpPerspective(gray, M, (warpedW, warpedH))
 
-    # ...but it may be rotated, so we need to rectify our pattern.
-    # To do this we iterate through all the possible 90 degrees rotations to find the one with a blank tile (upper right).
-    # We have the checkBlankArea function that returns the color of our check area, we simply find the minimum.
-
     currMax = checkBlankArea(warped)
     for i in range(3):
-        # Find homography and warped image with that rotation
         biggerContour = np.roll(biggerContour, shift=1, axis=0)
         M2 = cv2.findHomography(biggerContour, destPoints)[0]
         rotated = cv2.warpPerspective(gray, M2, (warpedW, warpedH))
@@ -85,14 +69,11 @@ def findRectanglePatternHomography(gray):
 
     removeXYSigns(warped)
 
-    # We return the Homography, Corners and the Warped Image
     return M, biggerContour, warped
 
 
 def genExpectedChessboardCorners(width=160, height=200, excludeTrickyPoints=True):
-    """
-    Generate the expected chessboard corners for our pattern
-    """
+
     outerBorderPoints = [[0, 0], [160, 0], [160, 200], [0, 200]]
     innerBorderPoints = [[10, 10], [150, 10], [150, 190]]
     innerChessboardPoints = \
@@ -101,8 +82,6 @@ def genExpectedChessboardCorners(width=160, height=200, excludeTrickyPoints=True
         [[120, j] for j in range(40, 200, 20)] + \
         [[140, j] for j in range(60, 180, 20)]
 
-    # We found out that the lower left corners (near the xy signs) are harder to find
-    # As default we ignore them, unless the user wants to
     if excludeTrickyPoints == False:
         innerBorderPoints.append([10, 190])
         innerChessboardPoints.append([20, 180])
@@ -116,20 +95,12 @@ def genExpectedChessboardCorners(width=160, height=200, excludeTrickyPoints=True
 
 
 def findChessboardCorners(H, rectangle, cropped, gray, useOuterPoints=False):
-    """
-    Given the homography, rectangle contour in the image and warped image,
-    finds the inner chessboard corners, returning the image and object points
-    """
 
     imagePoints = []
     objectPoints = []
 
-    # We first find the expected corners positions
     innerTargetPoints, outerTargetPoints = genExpectedChessboardCorners()
 
-    # ...then we refine the expected corners positions using cornerSubPix
-    # This way the points are supposed to follow the corners precisely
-    # We do this only with inner points
     zeroZone = (-1, -1)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TermCriteria_COUNT, 2000, 0.01)
     refinedInnerPoints = cv2.cornerSubPix(
@@ -137,18 +108,14 @@ def findChessboardCorners(H, rectangle, cropped, gray, useOuterPoints=False):
     refinedOuterPoints = cv2.cornerSubPix(
         gray, outerTargetPoints, (4, 4), zeroZone, criteria)
 
-    # We transform our found chessboard corners in the warped image
-    # back to image points, inverting the homography matrix
     H_inv = np.linalg.inv(H)
     projectedInner = cv2.perspectiveTransform(refinedInnerPoints, H_inv)
     projectedOuter = cv2.perspectiveTransform(refinedOuterPoints, H_inv)
 
-    # We had worst results with outer points, so maybe it's better to leave them out...
     if useOuterPoints:
         innerTargetPoints.extend(outerTargetPoints)
         projectedInner.extend(projectedOuter)
 
-    # We build our imagePoints and objectPoints arrays, using the found results
     for t, p in zip(innerTargetPoints, projectedInner):
         tx, ty = t[0]
         px, py = p[0]
@@ -159,7 +126,6 @@ def findChessboardCorners(H, rectangle, cropped, gray, useOuterPoints=False):
 
 
 def run(debug=False):
-    # From and to homography points
     imagePoints = []
     objectPoints = []
 
@@ -168,10 +134,8 @@ def run(debug=False):
         img = cv2.imread(file)
         gray = cv2.cvtColor(img, cv2.COLOR_RGBA2GRAY)
 
-        # First we find our rectange pattern
         H, rectangle, cropped = findRectanglePatternHomography(gray)
 
-        # Then we get our chessboard pattern corners
         imgImagePoints, imgObjectPoints = findChessboardCorners(
             H, rectangle, cropped, gray)
         imagePoints.append(imgImagePoints)
@@ -195,7 +159,6 @@ def run(debug=False):
     )
     objectPoints = np.array(objectPoints, dtype=np.float32)
 
-    # With our object and image points we can finally perform the calibration
     ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(
         objectPoints, imagePoints, (img.shape[0], img.shape[1]), None, None
     )
@@ -204,7 +167,6 @@ def run(debug=False):
     print(f"Distortion parameters:\n{dist}")
     print(f"\nImages used for calibration: {imagePoints.shape[0]}/50")
 
-    # We save our intrinsics parameters to file for later use
     Kfile = cv2.FileStorage("intrinsics.xml", cv2.FILE_STORAGE_WRITE)
     Kfile.write("RMS", ret)
     Kfile.write("K", K)
